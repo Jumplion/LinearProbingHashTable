@@ -1,0 +1,204 @@
+import java.io.IOException;
+
+/*
+Project #3
+Due Dates:  Wednesday, March 25 at 11:59pm 
+Submit:    eLearning
+Late Policy:  -10 points per hour late
+Instructions: This is an individual assignment.  All work should be your own.
+
+Objective:
+     Work with hash tables by creating a hash table using linear probing.
+
+Description:
+     Your class should have the following methods.  The methods should 
+     all operate on the object making the call (none are static).  
+
+     Perform checking of the parameters and throw exceptions where 
+     appropriate.
+
+     You may use code from the textbook, but all other code must be
+     your own.        
+
+Submit to eLearning:
+     LinearProbingHashTable.java
+*/
+
+public class LPHashTable<K,V> {
+
+	private static final int DEFAULT_SIZE = 4;
+	int size;			// Size of the table
+	int N;				// Number of elements in the table
+	Entry<K,V> table[];	// Array storing the Entries themselves
+	
+	@SuppressWarnings("unchecked")
+	LPHashTable(){
+		size = DEFAULT_SIZE;
+		table = new Entry[size];
+	}
+	
+	@SuppressWarnings("unchecked")
+	LPHashTable(int s){
+		size = s;
+		table = new Entry[size];
+	}
+	
+	// inserts entry, rehashes if half full, can re-use deleted entries, throws exception if key is null, returns true if inserted, false if duplicate.
+	public boolean insert(K key, V value){ 
+		Entry<K,V> newEntry = new Entry<K,V>(key, value);
+		
+		if(key == null){
+			throw new NullPointerException("Key must not be null"); 
+		}
+		
+		if(N >= size/2){
+			System.out.println("Rehashing table");
+			rehash();
+		}
+		
+		for(int x=getHashValue(key); x < size; x = (x+1)%size)
+		{	
+			if( table[x] != (null))
+			{
+				if(table[x].value == value){
+					System.out.println(value.toString() + " is a duplicate value");
+					return false;
+				}
+				
+				if(table[x].equals(newEntry.key))
+				{ 
+					N++;
+					table[x].value = newEntry.value;
+					return true; 
+				}
+			}
+			else{
+				N++;
+				table[x] = newEntry;
+				return true; 
+			}
+		}
+		
+		return false;
+		
+	}
+	
+	// returns value for key, or null if not found
+	public V find(K key){
+		System.out.println("Finding the value associated with '" + key.toString() + "'");
+		
+        for (int i = getHashValue(key); table[i] != null; i = (i + 1) % size) 
+            if (table[i].key == key)
+                return table[i].value;
+       
+        System.out.println("The value associated with '" + key.toString() + "' was not found");
+        return null;
+	}
+	
+	// marks the entry deleted but leaves it there, returns true if deleted, false if not found
+	public boolean delete(K key){
+	       if (find(key) == null) 
+	    	   return false;
+
+	        // find position i of key
+	        int i = getHashValue(key);
+	        
+	        
+	        System.out.println("Working through teh table");
+	        while (!key.equals(table[i])) {
+	            i = (i + 1) % size;
+	        }
+
+	        // delete key and associated value
+	        table[i].key = null;
+	        table[i].value = null;
+
+	        // rehash all keys in same cluster
+	        N--;        
+	        rehash();
+	        
+	        return true;
+	}
+	
+	// doubles the table size, hashes everything to the new table, omitting items marked deleted
+	private void rehash(){
+		
+		LPHashTable<K, V> temp;
+		
+		if(N > size/2)
+			temp = new LPHashTable<K, V>(size*2);
+		else if(N < size/4)
+			temp = new LPHashTable<K, V>(size/2);
+		else
+			temp = new LPHashTable<K, V>(size);
+		
+        for (int i = 0; i < size; i++) {
+            if (table[i] != null) {
+                temp.insert(table[i].key, table[i].value);
+            }
+        }
+        size = temp.size;
+        table = temp.table;
+	}
+	
+	// returns the hash value for the given key, or -1 if not found. (this is the value before probing occurs)
+	public int getHashValue(K key){
+        return (key.hashCode() & 0x7fffffff) % size;
+	}
+	
+    // returns the location for the given key, or -1 if not found. (this is the value after probing occurs)
+//	public int getLocation(K key){}
+	
+	/* returns a formatted string of the hash table:
+      *  0  null
+      *  1  xxxxx
+      *  2  yyyyy
+      *  ...
+	*/
+	public String toString(){
+	
+		System.out.println("Printing hash table");
+		
+		for(int x =0; x<size; x++){
+			if(table[x] != null)
+				System.out.println(" " + table[x].key + " " + table[x].value);
+		}
+		
+		return "";
+	}
+	
+	private static class Entry<K,V>{
+		K key;
+		V value;
+		
+		Entry(){
+			key = null;
+			value = null;
+		}
+		Entry(K k, V v){
+			key = k;
+			value = v;
+		}
+	}
+	
+	public static void main(String[] args) {
+
+		LPHashTable<String, Integer> test = new LPHashTable<String, Integer>();
+		test.insert("Hello" , 6);
+		test.insert("Goodbye", 28);
+		test.insert("Maybe", 99);
+		test.insert("Definitely", 11);
+		test.insert("Forsure", 1414);
+		
+		System.out.println(test.find("Goodbye"));
+		
+		test.toString();
+		
+		test.delete("Hello");
+		
+		test.toString();
+		
+		System.out.println("end of program");
+	}
+
+}
